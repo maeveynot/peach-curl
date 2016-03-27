@@ -1,0 +1,140 @@
+#!/bin/sh
+
+api_base="https://v1.peachapi.com"
+session_file="$HOME/.peach-session"
+
+print_api_help() {
+    cat <<EOF
+Here are the endpoints we know about. For POST or PUT requests, the JSON request body is given in shorthand.
+
+# Account registration
+
+POST    /precheck/create/user           {email: string} or {password: string}
+POST    /precheck/create/stream         {name: string}
+POST    /register                       {email: string, password: string, name: string}
+POST    /login                          {email: string, password: string}
+POST    /recover                        {email: string, returnLink: string}
+POST    /stream/device                  {applicationId: string, deviceId: string}
+
+# Reading posts
+
+GET     /connections
+GET     /connections/explore
+GET     /stream/id/{{id}}
+GET     /stream/n/{{name}}
+PUT     /stream/id/{{id}}/read          (no body)
+
+# Listing friends
+
+GET     /stream/id/{{id}}/connections
+GET     /stream/n/{{name}}/connections
+
+# Requesting friends
+
+POST    /stream/n/{{name}}/connection   (no body)
+DELETE  /stream/n/{{name}}/connection
+GET     /connections/requests/inbound
+POST    /friend-request/{{id}}/accept   (no body)
+DELETE  /friend-request/{{id}}
+
+# Posting, liking, commenting
+
+POST    /post                           {message: [{type: "text", text: string}]}
+                                          or {type: "image", src: string, width: number, height: number}, etc...
+DELETE  /post/{{id}}
+POST    /like                           {postId: string}
+DELETE  /like/postID/{{id}}
+POST    /comment                        {postId: string, comment: string}
+DELETE  /comment/{{id}}
+
+# Blocking
+
+POST    /stream/id/{{id}}/block         (no body)
+POST    /stream/n/{{name}}/block        (no body)
+POST    /stream/id/{{id}}/unblock       (no body)
+POST    /stream/n/{{name}}/unblock      (no body)
+GET     /stream/block-list
+
+# Notifications
+
+GET     /activity/isUnread
+GET     /stream/activity
+PUT     /activity/read                  (no body)
+
+# Interacting
+
+POST    /activity/wave                  {targetStreamId: string, type: string}
+GET     /chat
+GET     /chat/token
+POST    /chat/id/{{id}}                 {clientPostID: string, message: [{type: "text", text: string, $messageID: string, $isTail: string, $isFinalTail: string}]}
+                                          or {type: "image", subtype: "sticker", src: string, width: number, height: number}, etc...
+PUT     /chat/id/{{id}}/read            (no body)
+
+# Account settings
+
+PUT     /stream/name                    {name: string}
+PUT     /stream/displayName             {displayName: string}
+PUT     /stream/bio                     {bio: string}
+PUT     /stream/avatarSrc               {avatarSrc: string}
+GET     /stream/friends/auto
+POST    /stream/friends/auto            {auto: boolean}
+GET     /stream/online-visibility
+POST    /stream/online-visibility       {onlineVisibility: boolean}
+GET     /stream/public
+POST    /stream/public                  {public: boolean}
+GET     /stream/sharing
+POST    /stream/sharing                 {friendsSharing: boolean}
+GET     /stream/visibility
+POST    /stream/visibility              {friendsOnly: boolean}
+
+Usage: pass a resource path first, then curl options to set method/body, like:
+
+    peach /connections
+    peach /precheck/create/user -d '{"email": "peachymcpeachface@example.com"}'
+    peach /activity/read -X PUT
+EOF
+}
+
+curl_peach() {
+    local token="$1"; shift
+    local resource="${1#/}"; shift
+    for i; do
+        case "$i" in
+            -d|--data*) body=set;;
+        esac
+    done
+    curl -fsSL ${token:+-H "Authorization: Bearer $token"} \
+         -H 'Accept: application/json' ${body:+-H 'Content-Type: application/json'} \
+         "$@" "$api_base/$resource"
+}
+
+setup_session() {
+    echo "You don't have a API token yet! Let's log in."
+    read -p "Please enter your 🍑  email address: " -r peach_email
+    stty -echo
+    read -p "Please enter your 🍑  password: " -r peach_password
+    stty echo; echo
+    login_data="{\"email\":\"$peach_email\",\"password\":\"$peach_password\"}"
+    if curl_peach '' /login -d "$login_data" -o "$session_file"; then
+        echo "Wrote your token to $session_file. Happy 🍑 ing!"
+        echo "Run this command again for more instructions."
+        exit 0
+    else
+        echo "Error writing $session_file. Sorry!"
+        exit 1
+    fi
+}
+
+test -s "$session_file" && token="$(jq -r '.data.streams[0].token' < "$session_file")"
+
+if test -z "$token"; then
+    setup_session
+else
+    if test "$#" -gt 0; then
+        resource="$1"; shift
+        # TODO: we want to omit the token for some account registration endpoints
+        curl_peach "$token" "$resource" "$@" | jq .
+    else
+        print_api_help
+    fi
+fi
