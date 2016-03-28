@@ -6,28 +6,29 @@ A little command line wrapper for `curl`ing the
 # Usage
 
 1. Install [jq](https://stedolan.github.io/jq/).
-1. Run once to log in (this stores the response in `~/.peach-session`).
-2. Run again to get a list of known API endpoints and example commands.
-3. Run again with some arguments to make a request.
-
-# Output
-
-If stdout is a terminal, output will be piped through `jq .`. So:
-
-    peach /connections                      # will be pretty-printed and colorized
-    peach /connections > c.json             # will be compact
-    peach /connections | jq . > c.json      # will be pretty-printed, but not colorized
-    peach /connections | less               # will be compact
-    peach /connections | jq -C . | less -R  # will be pretty-printed and colorized
-
-The `-C` option to `jq` is necessary because its stdout is not a
-terminal either.
+2. Run once to log in (this stores the response in `~/.peach-session`).
+3. Run again to get a list of known API endpoints and example commands.
+4. Run again with some arguments to make a request: `peach [options] ENDPOINT [curl options]`
 
 # Options
 
 - `-f`: use a different session file (instead of `~/.peach-session`).
 - `-n`: don't authenticate (if the session file exists), or try to login
-  (if it does not). Useful for registering a new account.
+  (if it does not). Useful for registering a new account, hopefully.
+
+# Output
+
+If `peach`'s stdout is a terminal, output will be filtered through `jq
+.`. Otherwise, responses will be output without any filtering. So:
+
+    peach /connections                      # will be pretty-printed and colorized
+    peach /connections > c.json             # will be compact
+    peach /connections | less               # will also be compact
+    peach /connections | jq . > c.json      # will be pretty-printed, but not colorized
+    peach /connections | jq -C . | less -R  # will again be pretty-printed and colorized
+
+In the last example, the `-C` option to `jq` is necessary because its
+stdout is not a terminal either.
 
 # Thanks
 
