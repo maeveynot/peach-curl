@@ -10,6 +10,19 @@ A little command line wrapper for `curl`ing the
 2. Run again to get a list of known API endpoints and example commands.
 3. Run again with some arguments to make a request.
 
+# Output
+
+If stdout is a terminal, output will be piped through `jq .`. So:
+
+    peach /connections                   # will be pretty-printed and colorized
+    peach /connections > c.json          # will be compact
+    peach /connections | jq . > c.json   # will be pretty-printed, but not colorized
+    peach /connections | less            # will be compact
+    peach /connections | jq -C . | less  # will be pretty-printed and colorized
+
+The `-C` option to `jq` is necessary because its stdout is not a
+terminal either.
+
 # Options
 
 - `-f`: use a different session file (instead of `~/.peach-session`).

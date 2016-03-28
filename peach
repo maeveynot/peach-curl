@@ -140,7 +140,7 @@ fi
 
 if test "$#" -gt 0; then
     resource="${1#/}"; shift
-    curl_peach "$resource" "$@" | jq .
+    curl_peach "$resource" "$@" | if test -t 1; then jq .; else cat; fi
 else
     print_api_help
 fi
