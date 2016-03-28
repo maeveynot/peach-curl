@@ -96,45 +96,51 @@ EOF
 }
 
 curl_peach() {
-    local token="$1"; shift
-    local resource="${1#/}"; shift
+    local resource="$1"; shift
     for i; do
         case "$i" in
-            -d|--data*) body=set;;
+            -d|--data*) body=yes;;
         esac
     done
-    curl -fsSL ${token:+-H "Authorization: Bearer $token"} \
-         -H 'Accept: application/json' ${body:+-H 'Content-Type: application/json'} \
+    curl -fsSL -H 'Accept: application/json' \
+         ${body:+-H 'Content-Type: application/json'} \
+         ${token:+-H "Authorization: Bearer $token"} \
          "$@" "$api_base/$resource"
 }
 
-setup_session() {
-    echo "You don't have a API token yet! Let's log in."
-    read -p "Please enter your 🍑  email address: " -r peach_email
-    stty -echo
-    read -p "Please enter your 🍑  password: " -r peach_password
-    stty echo; echo
-    login_data="{\"email\":\"$peach_email\",\"password\":\"$peach_password\"}"
-    if curl_peach '' /login -d "$login_data" -o "$session_file"; then
-        echo "Wrote your token to $session_file. Happy 🍑 ing!"
-        echo "Run this command again for more instructions."
-        exit 0
-    else
-        echo "Error writing $session_file. Sorry!"
-        exit 1
+authenticated=yes
+while getopts 'f:n' opt; do
+    case "$opt" in
+        f) session_file="$OPTARG";;
+        n) unset authenticated;;
+        *) echo "Unknown option: $opt"; exit 2;;
+    esac
+done; shift $(($OPTIND-1))
+
+if test -n "$authenticated"; then
+    if test -s "$session_file"; then
+        token="$(jq -r '.data.streams[0].token' < "$session_file")"
     fi
-}
+    if test -z "$token"; then
+        echo "You don't have a API token yet! Let's log in."
+        read -p "Please enter your 🍑  email address: " -r peach_email
+        stty -echo
+        read -p "Please enter your 🍑  password: " -r peach_password
+        stty echo; echo
+        if curl_peach /login -d "{\"email\":\"$peach_email\",\"password\":\"$peach_password\"}" -o "$session_file"; then
+            echo "Wrote your token to $session_file. Happy 🍑 ing!"
+            echo "Run this command again for more instructions."
+            exit 0
+        else
+            echo "Error writing $session_file. Sorry!"
+            exit 1
+        fi
+    fi
+fi
 
-test -s "$session_file" && token="$(jq -r '.data.streams[0].token' < "$session_file")"
-
-if test -z "$token"; then
-    setup_session
+if test "$#" -gt 0; then
+    resource="${1#/}"; shift
+    curl_peach "$resource" "$@" | jq .
 else
-    if test "$#" -gt 0; then
-        resource="$1"; shift
-        # TODO: we want to omit the token for some account registration endpoints
-        curl_peach "$token" "$resource" "$@" | jq .
-    else
-        print_api_help
-    fi
+    print_api_help
 fi
