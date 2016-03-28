@@ -58,7 +58,7 @@ GET     /stream/block-list
 # Notifications
 
 GET     /activity/isUnread
-GET     /stream/activity
+GET     /activity
 PUT     /activity/read                  (no body)
 
 # Interacting
