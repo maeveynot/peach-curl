@@ -16,6 +16,19 @@ A little command line wrapper for `curl`ing the
 - `-n`: don't authenticate (if the session file exists), or try to login
   (if it does not). Useful for registering a new account, hopefully.
 
+# Examples
+
+For simple examples, run `peach` without any arguments. Here are some
+ways you can combine it with `jq` to do more interesting things:
+
+Make a text post:
+
+    peach /post -d "$(jq -sRc '{message: [{type: "text", text: .}]}' < post-body.txt)"
+
+List names of users you have blocked:
+
+    peach /stream/block-list | jq -r '.data.blockList[].name'
+
 # Output
 
 If `peach`'s stdout is a terminal, output will be filtered through `jq
