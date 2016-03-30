@@ -127,7 +127,8 @@ if test -n "$authenticated"; then
         stty -echo
         read -p "Please enter your 🍑  password: " -r peach_password
         stty echo; echo
-        if curl_peach /login -d "{\"email\":\"$peach_email\",\"password\":\"$peach_password\"}" -o "$session_file"; then
+        login_body="$(jq --arg email "$peach_email" --arg password "$peach_password" -n '{email: $email, password: $password}')"
+        if curl_peach /login -d "$login_body" -o "$session_file"; then
             echo "Wrote your token to $session_file. Happy 🍑 ing!"
             echo "Run this command again for more instructions."
             exit 0

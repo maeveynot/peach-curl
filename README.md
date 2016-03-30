@@ -49,8 +49,6 @@ Initial API exploration was done by @ummjackson in [this Gist](https://gist.gith
 
 # TODO
 
-- Passwords with certain punctuation characters cause `/login` to fail
-  (is the app escaping them?)
 - Figure out if chat is really usable without connecting to `pubsub.pubnub.com`
 - Figure out why `/user/hasVerifiedPhone` doesn't work for me
 - Tests, somehow?
