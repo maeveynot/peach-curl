@@ -3,12 +3,13 @@
 A little command line wrapper for `curl`ing the
 [Peach](http://peach.cool/) API.
 
-# Usage
+# Quick Start
 
 1. Install [jq](https://stedolan.github.io/jq/).
-2. Run once to log in (this stores the response in `~/.peach-session`).
-3. Run again to get a list of known API endpoints and example commands.
-4. Run again with some arguments to make a request: `peach [options] ENDPOINT [curl options]`
+2. Put `peach` somewhere in your PATH: `install peach /usr/local/bin`
+3. Run `peach` once to log in (this stores the response in `~/.peach-session`).
+4. Run it again to get a list of known API endpoints and example commands.
+5. Run it again with some arguments to make a request: `peach [options] ENDPOINT [curl options]`
 
 # Options
 
