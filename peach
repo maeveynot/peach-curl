@@ -7,14 +7,16 @@ print_api_help() {
     cat <<EOF
 Here are the endpoints we know about. For POST or PUT requests, the JSON request body is given in shorthand.
 
-# Account registration
+# Account and device registration
 
 POST    /precheck/create/user           {email: string} or {password: string}
 POST    /precheck/create/stream         {name: string}
 POST    /register                       {email: string, password: string, name: string}
 POST    /login                          {email: string, password: string}
-POST    /recover                        {email: string, returnLink: string}
+PUT     /logout
 POST    /stream/device                  {applicationId: string, deviceId: string}
+DELETE  /stream/device/{{device_id}}
+POST    /recover                        {email: string, returnLink: string}
 
 # Reading posts
 
