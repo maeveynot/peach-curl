@@ -30,6 +30,16 @@ List names of users you have blocked:
 
     peach /stream/block-list | jq -r '.data.blockList[].name'
 
+Get your unread activity, saving previous activity in `activity.json` to
+show only new items:
+
+    if peach /activity/isUnread | jq -e '.data.isUnreadActivity' >/dev/null; then
+        last_read="$(jq '.data.activityItems[0].createdTime' activity.json 2>/dev/null)"
+        peach /activity | tee activity.json \
+            | jq --arg last_read "${last_read:-0}" -c '.data.activityItems[] | select(.createdTime > ($last_read | tonumber))' &&
+            peach /activity/read -X PUT >/dev/null
+    fi
+
 # Output
 
 If `peach`'s stdout is a terminal, output will be filtered through `jq
