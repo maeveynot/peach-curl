@@ -119,7 +119,7 @@ done; shift $(($OPTIND-1))
 
 if test -n "$authenticated"; then
     if test -s "$session_file"; then
-        token="$(jq -r '.data.streams[0].token' < "$session_file")"
+        token="$(jq -r '.data.streams[0].token' "$session_file")"
     fi
     if test -z "$token"; then
         echo "You don't have a API token yet! Let's log in."

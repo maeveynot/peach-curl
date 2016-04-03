@@ -24,7 +24,7 @@ ways you can combine it with `jq` to do more interesting things:
 
 Make a text post:
 
-    peach /post -d "$(jq -sRc '{message: [{type: "text", text: .}]}' < post-body.txt)"
+    peach /post -d "$(jq -sRc '{message: [{type: "text", text: .}]}' post-body.txt)"
 
 List names of users you have blocked:
 
