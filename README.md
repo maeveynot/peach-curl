@@ -70,6 +70,11 @@ shorthand includes an array, the array can contain multiple values.
 
 # API Notes
 
+User streams that allow pagination will return a `cursor` key in the
+stream data. Make another request with this value added as a query
+parameter (so, `GET /stream/id/{{id}}?cursor={{cursor}}`) to return
+earlier items in the stream.
+
 Some parts of the API seem to have hidden state:
 
 - As mentioned above, `GET /connections` updates the time you were last
