@@ -119,8 +119,15 @@ stdout is not a terminal either.
 
 # Thanks
 
-Initial API exploration was done by @ummjackson in
-[this Gist](https://gist.github.com/ummjackson/4db1da44c509576c1d1b).
+I used
+[this Gist](https://gist.github.com/ummjackson/4db1da44c509576c1d1b) as
+a starting point for exploring the API.
+
+Peach's [Community Guidelines](http://peach.cool/guidelines.html) say
+"If you act like a creep, we'll ban you" and explicitly call out
+"discrimination, bigotry, racism, hatred, harassment or harm" as
+prohibited. I appreciate that. Do not use any of the knowledge about the
+API embodied in this script to do any of those things.
 
 # Bot Gallery
 
