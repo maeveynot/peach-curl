@@ -80,6 +80,8 @@ PUT     /stream/bio                     {bio: string}
 PUT     /stream/avatarSrc               {avatarSrc: string}
 GET     /stream/friends/auto
 POST    /stream/friends/auto            {auto: boolean}
+GET     /stream/allow-pagination
+POST    /stream/allow-pagination        {allowPagination: boolean}
 GET     /stream/online-visibility
 POST    /stream/online-visibility       {onlineVisibility: boolean}
 GET     /stream/public
