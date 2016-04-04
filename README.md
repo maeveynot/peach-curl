@@ -1,26 +1,37 @@
 # peach-curl
 
-A little command line wrapper for `curl`ing the
-[Peach](http://peach.cool/) API.
+A little command line wrapper for `curl`ing the (not officially
+documented) [Peach](http://peach.cool/) API.
 
 # Quick Start
 
 1. Install [jq](https://stedolan.github.io/jq/).
 2. Put `peach` somewhere in your PATH: `install peach /usr/local/bin`
 3. Run `peach` once to log in (this stores the response in `~/.peach-session`).
-4. Run it again to get a list of known API endpoints and example commands.
-5. Run it again with some arguments to make a request: `peach [options] ENDPOINT [curl options]`
+4. Run it again to get a list of known API endpoints and a few example
+   commands. For more details on the examples, see below.
 
 # Options
 
 - `-f`: use a different session file (instead of `~/.peach-session`).
 - `-n`: don't authenticate (if the session file exists), or try to login
-  (if it does not). Useful for registering a new account, hopefully.
+  (if it does not). Useful for registering a new account.
 
 # Examples
 
-For simple examples, run `peach` without any arguments. Here are some
-ways you can combine it with `jq` to do more interesting things:
+Get the contents of your friends' streams (this also updates the time
+you were seen "online"):
+
+    peach /connections
+
+Mark your activity as read:
+
+    peach /activity/read -X PUT
+
+Make an unauthenticated request to check if an account is available
+(this example is the official Team Peach account, so it's not):
+
+    peach -n /precheck/create/stream -d '{"name": "peach"}'
 
 Make a text post:
 
@@ -40,6 +51,53 @@ show only new items:
             peach /activity/read -X PUT >/dev/null
     fi
 
+# Endpoint list notes
+
+The endpoint list is given very tersely. The three columns are:
+
+- HTTP method
+- URL relative to `https://v1.peachapi.com/`
+- (for `POST` and `PUT` requests only) description of request body
+
+If part of the URL looks like a `{{template}}`, that means it needs to
+be filled in with an appropriate value.
+
+If there is a request body, it is described in shorthand (not valid
+JSON): keys are unquoted, and type names are used as placeholders for
+values. For example, `{public: boolean}` would mean you need to supply
+a JSON body of `{"public": true}` or `{"public": false}`. If the
+shorthand includes an array, the array can contain multiple values.
+
+# API Notes
+
+Some parts of the API seem to have hidden state:
+
+- As mentioned above, `GET /connections` updates the time you were last
+  seen "online". Other endpoints do not have this effect.
+
+- In order to register a new account, you must request (without
+  authenticating) the correct `precheck` endpoint and get a success
+  response for all three pieces of information (email, stream name,
+  password) shortly before doing `POST /register`.
+
+- `POST /stream/device` does not do anything observable. However, there
+  are two not-yet-documented endpoints, `GET /user/hasVerifiedPhone` and
+  `DELETE /user` which I suspect require some kind of device state to
+  have been set (otherwise they return 401 even with a valid session).
+  The device ID is a 64-digit hex number.
+
+Although chat endpoints are documented, I don't know if it's possible to
+fully use chat through the API only. The app also connects to
+`pubsub.pubnub.com` for push notifications and I have not looked at this
+traffic closely.
+
+There is an additional pseudo-endpoint, `GET
+/web/email/unsubscribe?token={{token}}`, which is sent to you as a
+regular URL in the activity emails you receive when logged out.
+Requesting it returns an HTML response meant for a web browser. The
+token is the same in every email but not used anywhere else. It is not
+clear how you would re-subscribe to these emails.
+
 # Output
 
 If `peach`'s stdout is a terminal, output will be filtered through `jq
@@ -56,10 +114,18 @@ stdout is not a terminal either.
 
 # Thanks
 
-Initial API exploration was done by @ummjackson in [this Gist](https://gist.github.com/ummjackson/4db1da44c509576c1d1b).
+Initial API exploration was done by @ummjackson in
+[this Gist](https://gist.github.com/ummjackson/4db1da44c509576c1d1b).
+
+# Bot Gallery
+
+If you create a bot using this script, I'd love to hear about it.
+Currently I am using it to run `@gifs_galore`.
 
 # TODO
 
-- Figure out if chat is really usable without connecting to `pubsub.pubnub.com`
-- Figure out why `/user/hasVerifiedPhone` doesn't work for me
+- A more pleasant way to automatically select different session files.
+  Saying "current directory if exists else home directory" is not good
+  because then it becomes ambiguous where to create the file when logging
+  in. Environment variables are kind of tacky.
 - Tests, somehow?

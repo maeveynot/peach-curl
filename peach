@@ -5,7 +5,7 @@ session_file="$HOME/.peach-session"
 
 print_api_help() {
     cat <<EOF
-Here are the endpoints we know about. For POST or PUT requests, the JSON request body is given in shorthand.
+Known Peach endpoints (see README.md for details of how to interpret this list):
 
 # Account and device registration
 
@@ -89,11 +89,11 @@ POST    /stream/sharing                 {friendsSharing: boolean}
 GET     /stream/visibility
 POST    /stream/visibility              {friendsOnly: boolean}
 
-Usage: pass a resource path first, then curl options to set method/body, like:
+Usage: peach [options] [endpoint] [curl options]
 
     peach /connections
-    peach /precheck/create/user -d '{"email": "peachymcpeachface@example.com"}'
     peach /activity/read -X PUT
+    peach -n /precheck/create/stream -d '{"name": "peach"}'
 EOF
 }
 
