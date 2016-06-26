@@ -3,6 +3,12 @@
 A little command line wrapper for `curl`ing the (not officially
 documented) [Peach](http://peach.cool/) API.
 
+# Warning
+
+As far as I can tell, Peach has been abandoned (last client update on
+2016-03-24, last post from the team on 2016-04-01). Everything here still
+works, but it may stop working at any time.
+
 # Quick Start
 
 1. Install [jq](https://stedolan.github.io/jq/).
@@ -102,6 +108,9 @@ regular URL in the activity emails you receive when logged out.
 Requesting it returns an HTML response meant for a web browser. The
 token is the same in every email but not used anywhere else. It is not
 clear how you would re-subscribe to these emails.
+
+The user interface for `GET /connections/explore` (the "friends of friends"
+view) was removed, so the endpoint will probably eventually be removed too.
 
 # Output
 
