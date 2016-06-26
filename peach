@@ -22,6 +22,7 @@ POST    /recover                        {email: string, returnLink: string}
 
 GET     /connections
 GET     /connections/explore
+GET     /recommended/streams
 GET     /stream/id/{{id}}
 GET     /stream/n/{{name}}
 PUT     /stream/id/{{id}}/read          (no body)
@@ -37,6 +38,7 @@ POST    /stream/n/{{name}}/connection   (no body)
 DELETE  /stream/n/{{name}}/connection
 GET     /connections/requests/inbound
 POST    /friend-request/{{id}}/accept   (no body)
+POST    /friend-request/{{id}}/ignore   (no body)
 DELETE  /friend-request/{{id}}
 
 # Posting, liking, commenting
