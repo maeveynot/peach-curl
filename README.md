@@ -33,7 +33,7 @@ Make an unauthenticated request to check if an account is available
 
     peach -n /precheck/create/stream -d '{"name": "peach"}'
 
-Make a text post:
+Make a text post from the contents of `post-body.txt`:
 
     peach /post -d "$(jq -sRc '{message: [{type: "text", text: .}]}' post-body.txt)"
 
