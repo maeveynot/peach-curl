@@ -3,12 +3,6 @@
 A little command line wrapper for `curl`ing the (not officially
 documented) [Peach](http://peach.cool/) API.
 
-# Warning
-
-As far as I can tell, Peach has been abandoned (last client update on
-2016-03-24, last post from the team on 2016-04-01). Everything here still
-works, but it may stop working at any time.
-
 # Quick Start
 
 1. Install [jq](https://stedolan.github.io/jq/).
