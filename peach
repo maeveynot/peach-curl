@@ -127,7 +127,7 @@ if test -n "$authenticated"; then
     if test -s "$session_file"; then
         token="$(jq -r '.data.streams[0].token' "$session_file")"
     fi
-    if test -z "$token"; then
+    if test -z "$token" -o "$token" = 'null'; then
         echo "You don't have a API token yet! Let's log in."
         read -p "Please enter your 🍑  email address: " -r peach_email
         stty -echo
@@ -135,9 +135,14 @@ if test -n "$authenticated"; then
         stty echo; echo
         login_body="$(jq --arg email "$peach_email" --arg password "$peach_password" -n '{email: $email, password: $password}')"
         if curl_peach /login -d "$login_body" -o "$session_file"; then
-            echo "Wrote your token to $session_file. Happy 🍑 ing!"
-            echo "Run this command again for more instructions."
-            exit 0
+            if test "$(jq -r '.success' "$session_file")" = '1'; then
+                echo "Wrote your token to $session_file. Happy 🍑 ing!"
+                echo "Run this command again for more instructions."
+                exit 0
+            else
+                echo "Error logging in: $(jq -r '.error.Message' "$session_file")"
+                exit 1
+            fi
         else
             echo "Error writing $session_file. Sorry!"
             exit 1
