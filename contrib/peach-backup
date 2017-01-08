@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# What we output to the current directory
+output_json='peach-backup-data.json'
+output_html='peach-backup.html'
+img_base_dir='peach-backup-images'
+
+# The HTML template (which, unfortunately, duplicates the image base dir)
+pug_template="$(dirname "$0")/peach-backup.pug"
+
+if test -e "$output_json"; then
+    echo "Oops, $output_json already exists! Remove it if you want to backup again."
+    exit 1
+fi
+
+# Fetch something to log in if necessary
+peach /activity/isUnread -o /dev/null || exit 2
+
+# Save the current value of pagination so we can turn it back off if desired.
+orig_pagination="$(peach /stream/allow-pagination | jq '.data.allowPagination')"
+
+if test "$orig_pagination" = 'false'; then
+    echo "Turning on pagination..."
+    peach /stream/allow-pagination -d '{"allowPagination": true}' | jq -c
+    sleep 8
+fi
+
+page_temp="$(mktemp -t peach-page-tmp.XXXXXX)"
+full_temp="$(mktemp -t peach-full-tmp.XXXXXX)"
+trap 'rm -f -- "$page_temp" "$full_temp"' INT TERM HUP EXIT
+
+my_id="$(jq -r '.data.streams[0].id' "$HOME/.peach-session")"
+until test "$cursor" = '0' -o "$cursor" = 'null'; do
+    echo "Fetching page from stream $my_id${cursor:+ with cursor $cursor}..."
+    peach "/stream/id/$my_id${cursor:+?cursor=$cursor}" > "$page_temp"
+    sleep 4
+    if test "$(jq -r '.success' "$page_temp")" = '0'; then
+        echo "Failed! Bailing."
+        break
+    fi
+    cursor="$(jq -r .data.cursor < "$page_temp")"
+
+    jq --argjson types '{"image": ["src"], "gif": ["src"], "video": ["src", "posterSrc"]}' \
+        -r '.data.posts[] | .id as $id | .message[] | . as $m | $types[.type] // empty | .[] | "\($id) \($m[.])"' "$page_temp" \
+    | while read post_id img_url; do
+        img_dir="$img_base_dir/$post_id"
+        mkdir -p "$img_dir"
+        img_file="$img_dir/$(basename "$img_url")"
+        if ! test -e "$img_file"; then
+            echo "Downloading image $img_url..."
+            curl -s -o "$img_file" "$img_url"
+            sleep 2
+        fi
+    done
+
+    if test -s "$output_json"; then
+        cp "$output_json" "$full_temp"
+        jq --slurpfile fetched "$full_temp" '.data | .posts = (.posts + $fetched[0].posts)' "$page_temp" > "$output_json"
+    else
+        jq '.data' "$page_temp" > "$output_json"
+    fi
+done
+
+if test "$orig_pagination" = 'false'; then
+    echo "Turning pagination back off..."
+    peach /stream/allow-pagination -d '{"allowPagination": false}' | jq -c
+fi
+
+echo "Done! Rendering HTML..."
+pug --pretty --obj "$output_json" < "$pug_template" > "$output_html"
+echo "Wrote $output_html to disk."

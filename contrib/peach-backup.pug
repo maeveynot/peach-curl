@@ -1,0 +1,55 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title= displayName
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+    style
+      | .avatar { height: 1.5em; margin: 0.25em; float: left; }
+      | .icon { color: white; background: gray; }
+      | .post img, .post video { width: 100%; object-fit: contain; }
+  body
+    .jumbotron
+      .container
+        h1
+          img.avatar(src=avatarSrc)
+          = displayName
+        p 🍑 @#{name}
+        p= bio
+    .container
+      .col-md-6.col-md-offset-3
+        each post in posts
+          .post
+            h2
+              a(name=post.id, href="#"+post.id)
+                = new Date(post.createdTime * 1000).toLocaleString()
+            each part in post.message
+              p.part
+                if part.type == 'text'
+                  = part.text
+                else if part.type == 'link'
+                  img(src=part.imageURL)
+                  br
+                  a(href=part.url)= part.title
+                else if part.type == "image" || part.type == "gif"
+                  img(src="peach-backup-images/"+post.id+"/"+part.src.split('/').pop())
+                else if part.type == 'video'
+                  video(autoplay="false", controls="true", preload="none", poster=part.posterSrc, src=part.src)
+                else if part.type == 'location'
+                  img.icon(src=part.iconSrc)
+                  a(href="http://foursquare.com/v/"+part.foursquareId)= part.name
+                  br
+                  a(href="http://maps.google.com/maps?q="+part.lat+","+part.long)
+                    each line in part.formattedAddress
+                      = line
+                      br
+                else if part.type == 'music'
+                  = part.title
+                else
+                  | [UNKNOWN MESSAGE PART #{part.type} OOPS]
+            p.meta
+              =post.likeCount
+              | 💖
+              =post.commentCount
+              | 🗒
