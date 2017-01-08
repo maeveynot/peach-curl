@@ -5,7 +5,7 @@ output_json='peach-backup-data.json'
 output_html='peach-backup.html'
 img_base_dir='peach-backup-images'
 
-# The HTML template (which, unfortunately, duplicates the image base dir)
+# The HTML template (in this directory)
 pug_template="$(dirname "$0")/peach-backup.pug"
 
 if test -e "$output_json"; then
@@ -55,9 +55,9 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
 
     if test -s "$output_json"; then
         cp "$output_json" "$full_temp"
-        jq --slurpfile fetched "$full_temp" '.data | .posts = (.posts + $fetched[0].posts)' "$page_temp" > "$output_json"
+        jq --slurpfile newPage "$page_temp" '.posts = ($newPage[0].data.posts + .posts)' "$full_temp" > "$output_json"
     else
-        jq '.data' "$page_temp" > "$output_json"
+        jq --arg backupImageDir "$img_base_dir" '.data | .backupImageDir = $backupImageDir' "$page_temp" > "$output_json"
     fi
 
     # TODO: handle GNU date on Linux

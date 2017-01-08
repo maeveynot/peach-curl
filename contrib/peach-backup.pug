@@ -33,11 +33,11 @@ html
                   br
                   a(href=part.url)= part.title
                 else if part.type == "image" || part.type == "gif"
-                  img.image(src="peach-backup-images/"+post.id+"/"+part.src.split('/').pop())
+                  img.image(src=backupImageDir+"/"+post.id+"/"+part.src.split('/').pop())
                 else if part.type == 'video'
                   video(controls, loop, preload="none",
-                    poster="peach-backup-images/"+post.id+"/"+part.posterSrc.split('/').pop(),
-                    src="peach-backup-images/"+post.id+"/"+part.src.split('/').pop())
+                    poster=backupImageDir+"/"+post.id+"/"+part.posterSrc.split('/').pop(),
+                    src=backupImageDir+"/"+post.id+"/"+part.src.split('/').pop())
                 else if part.type == 'location'
                   img.icon(src=part.iconSrc)
                   a(href="http://foursquare.com/v/"+part.foursquareId)= part.name
