@@ -47,7 +47,12 @@ html
                       = line
                       br
                 else if part.type == 'music'
-                  = part.title
+                  if part.spotifyData
+                    a(href="http://open.spotify.com/track/"+part.spotifyData.track.id)= part.title
+                  else if part.itunesData
+                    a(href="http://itunes.apple.com/us/album/peach/id"+part.itunesData.album.id)= part.title
+                  else
+                    = part.title
                 else
                   | [UNKNOWN MESSAGE PART #{part.type} OOPS]
             p.meta
