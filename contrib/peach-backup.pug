@@ -27,7 +27,9 @@ html
             each part in post.message
               p.part
                 if part.type == 'text'
-                  = part.text
+                  each line in part.text.split(/\n/)
+                    = line
+                    br
                 else if part.type == 'link'
                   img(src=part.imageURL)
                   br
@@ -40,6 +42,7 @@ html
                     src=backupImageDir+"/"+post.id+"/"+part.src.split('/').pop())
                 else if part.type == 'location'
                   img.icon(src=part.iconSrc)
+                  | &nbsp;
                   a(href="http://foursquare.com/v/"+part.foursquareId)= part.name
                   br
                   a(href="http://maps.google.com/maps?q="+part.lat+","+part.long)
@@ -57,6 +60,6 @@ html
                   | [OOPS, DUNNO HOW TO DISPLAY A #{part.type}, PLEASE FIX ME]
             p.meta
               =post.likeCount
-              | 💖
+              | &nbsp;💖&nbsp;
               =post.commentCount
-              | 🗒
+              | &nbsp;🗒
