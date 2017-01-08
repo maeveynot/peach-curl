@@ -33,7 +33,6 @@ my_id="$(jq -r '.data.streams[0].id' "$HOME/.peach-session")"
 until test "$cursor" = '0' -o "$cursor" = 'null'; do
     echo "Fetching page from stream $my_id${cursor:+ with cursor $cursor}..."
     peach "/stream/id/$my_id${cursor:+?cursor=$cursor}" > "$page_temp"
-    echo "Loaded entries back to $(date -j -f '%s' $(jq -r '.data.posts[0].createdTime' "$page_temp"))"
     sleep 4
     if test "$(jq -r '.success' "$page_temp")" = '0'; then
         echo "Failed! Bailing."
@@ -60,6 +59,11 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
     else
         jq '.data' "$page_temp" > "$output_json"
     fi
+
+    # TODO: handle GNU date on Linux
+    page_date="$(date -j -f '%s' $(jq -r '.data.posts[0].createdTime' "$page_temp"))"
+    echo "Loaded entries back to $page_date; writing HTML to $output_html"
+    pug --pretty --obj "$output_json" < "$pug_template" > "$output_html"
 done
 
 if test "$orig_pagination" = 'false'; then
@@ -67,6 +71,4 @@ if test "$orig_pagination" = 'false'; then
     peach /stream/allow-pagination -d '{"allowPagination": false}' | jq -c
 fi
 
-echo "Done! Rendering HTML..."
-pug --pretty --obj "$output_json" < "$pug_template" > "$output_html"
-echo "Wrote $output_html to disk. Enjoy!"
+echo "Finished creating backup!"
