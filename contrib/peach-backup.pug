@@ -8,7 +8,7 @@ html
     style
       | .avatar { height: 1.5em; margin: 0.25em; float: left; }
       | .icon { color: white; background: gray; }
-      | .post img, .post video { width: 100%; object-fit: contain; }
+      | .post img.image, .post video { width: 100%; object-fit: contain; }
   body
     .jumbotron
       .container
@@ -33,7 +33,7 @@ html
                   br
                   a(href=part.url)= part.title
                 else if part.type == "image" || part.type == "gif"
-                  img(src="peach-backup-images/"+post.id+"/"+part.src.split('/').pop())
+                  img.image(src="peach-backup-images/"+post.id+"/"+part.src.split('/').pop())
                 else if part.type == 'video'
                   video(controls, loop, preload="none",
                     poster="peach-backup-images/"+post.id+"/"+part.posterSrc.split('/').pop(),
