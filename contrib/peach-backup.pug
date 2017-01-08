@@ -35,7 +35,7 @@ html
                 else if part.type == "image" || part.type == "gif"
                   img(src="peach-backup-images/"+post.id+"/"+part.src.split('/').pop())
                 else if part.type == 'video'
-                  video(autoplay="false", controls="true", preload="none", poster=part.posterSrc, src=part.src)
+                  video(controls, loop, preload="none", poster=part.posterSrc, src=part.src)
                 else if part.type == 'location'
                   img.icon(src=part.iconSrc)
                   a(href="http://foursquare.com/v/"+part.foursquareId)= part.name
