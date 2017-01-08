@@ -48,7 +48,7 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
         mkdir -p "$img_dir"
         img_file="$img_dir/$(basename "$img_url")"
         if ! test -e "$img_file"; then
-            echo "Downloading image $img_url..."
+            echo "Downloading image $img_file..."
             curl -s -o "$img_file" "$img_url"
             sleep 2
         fi
@@ -69,4 +69,4 @@ fi
 
 echo "Done! Rendering HTML..."
 pug --pretty --obj "$output_json" < "$pug_template" > "$output_html"
-echo "Wrote $output_html to disk."
+echo "Wrote $output_html to disk. Enjoy!"
