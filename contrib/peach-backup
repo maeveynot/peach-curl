@@ -33,6 +33,7 @@ my_id="$(jq -r '.data.streams[0].id' "$HOME/.peach-session")"
 until test "$cursor" = '0' -o "$cursor" = 'null'; do
     echo "Fetching page from stream $my_id${cursor:+ with cursor $cursor}..."
     peach "/stream/id/$my_id${cursor:+?cursor=$cursor}" > "$page_temp"
+    echo "Loaded entries back to $(date -j -f '%s' $(jq -r '.data.posts[0].createdTime' "$page_temp"))"
     sleep 4
     if test "$(jq -r '.success' "$page_temp")" = '0'; then
         echo "Failed! Bailing."
