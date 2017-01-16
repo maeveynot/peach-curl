@@ -31,7 +31,7 @@ html
                     = line
                     br
                 else if part.type == 'link'
-                  img(src=part.imageURL)
+                  img.image(src=part.imageURL)
                   br
                   a(href=part.url)= part.title
                 else if part.type == "image" || part.type == "gif"
