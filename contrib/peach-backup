@@ -9,12 +9,15 @@ img_base_dir='peach-backup-images'
 pug_template="$(dirname "$0")/peach-backup.pug"
 
 if test -e "$output_json"; then
-    echo "Oops, $output_json already exists! Remove it if you want to backup again."
-    exit 1
+    echo "Moving old $output_json to $output_json.old"
+    mv "$output_json" "$output_json.old"
 fi
 
 # Fetch something to log in if necessary
-peach /activity/isUnread -o /dev/null || exit 2
+if ! peach /activity/isUnread -o /dev/null; then
+    echo "Can't connect to Peach"
+    exit 1
+fi
 
 # Save the current value of pagination so we can turn it back off if desired.
 orig_pagination="$(peach /stream/allow-pagination | jq '.data.allowPagination')"
