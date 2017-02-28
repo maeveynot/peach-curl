@@ -73,8 +73,20 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
         jq --arg imgBase "$img_base_dir" '.data | .imgBase = $imgBase' "$page_temp" > "$output_json"
     fi
 
-    page_date="$(jq -r '.posts[0].createdTime | gmtime | strftime("%F %T %Z")' "$output_json")"
-    echo "Loaded entries back to $page_date; writing HTML..."
+    # NOTE about all time stuff: The jq manual claims that all builtins
+    # deal exclusively with UTC, which is mostly true, but if you pass
+    # %Z or %z to strftime you get your local tz. We could misuse this
+    # to calculate the local UTC offset, with something like:
+    #
+    # jq -n '0 | strftime("%z") | if .[:-4] == "-" then -1 else 1 end * (.[-4:-2]|tonumber)*3600 + (.[-2:]|tonumber)*60'
+    #
+    # and then pre-adjust all epoch values (.createdTime) to make the
+    # resulting hour come out right. This seems like worse of a hack
+    # than living with the month pages being cut off at UTC midnight
+    # instead of local midnight, so I'm not doing it.
+
+    page_date="$(jq -r '.posts[0].createdTime | gmtime | strftime("%F %T")' "$output_json")"
+    echo "Loaded entries back to $page_date (UTC); writing HTML..."
 
     jq '.posts | map(.createdTime | gmtime | strftime("%Y-%m")) | unique' "$output_json" > "$months_temp"
     jq -r '.[]' "$months_temp" | while read -r month; do
