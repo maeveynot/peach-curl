@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # What we output to the current directory
-output_json='peach-backup-data.json'
-output_html='peach-backup.html'
-img_base_dir='peach-backup-images'
+output_base='peach-backup'
+output_json="$output_base-data.json"
+img_base_dir="$output_base-images"
 
 # The HTML template (in this directory)
-pug_template="$(dirname "$0")/peach-backup.pug"
+pug_template="$(dirname "$0")/peach-backup-page.pug"
 
 if test -e "$output_json"; then
     echo "Moving old $output_json to $output_json.old"
@@ -28,10 +28,19 @@ if test "$orig_pagination" = 'false'; then
     sleep 8
 fi
 
-page_temp="$(mktemp -t peach-page-tmp.XXXXXX)"
-full_temp="$(mktemp -t peach-full-tmp.XXXXXX)"
-cleanup() { rm -f -- "$page_temp" "$full_temp"; }
+page_temp="$(mktemp -t peach-page.XXXXXX)"
+full_temp="$(mktemp -t peach-full.XXXXXX)"
+months_temp="$(mktemp -t peach-months.XXXXXX)"
+pug_temp="$(mktemp -t peach-pug.XXXXXX)"
+cleanup() { rm -f -- "$page_temp" "$full_temp" "$months_temp" "$pug_temp"; }
 trap 'exit $?' HUP INT QUIT TERM; trap cleanup exit
+
+write_pug() {
+    output="$1"; shift
+    cat > "$pug_temp"
+    pug --obj "$pug_temp" --pretty --path "$pug_template" <"$pug_template" >"$output"
+    echo "  - wrote $output"
+}
 
 my_id="$(jq -r '.data.streams[0].id' "$HOME/.peach-session")"
 until test "$cursor" = '0' -o "$cursor" = 'null'; do
@@ -61,13 +70,19 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
         cp "$output_json" "$full_temp"
         jq --slurpfile newPage "$page_temp" '.posts = ($newPage[0].data.posts + .posts)' "$full_temp" > "$output_json"
     else
-        jq --arg backupImageDir "$img_base_dir" '.data | .backupImageDir = $backupImageDir' "$page_temp" > "$output_json"
+        jq --arg imgBase "$img_base_dir" '.data | .imgBase = $imgBase' "$page_temp" > "$output_json"
     fi
 
-    page_date="$(jq -r '.posts[0].createdTime | gtmime | strftime("%F %T")' "$output_json")"
-    echo "Loaded entries back to $page_date; writing HTML to $output_html"
+    page_date="$(jq -r '.posts[0].createdTime | gmtime | strftime("%F %T %Z")' "$output_json")"
+    echo "Loaded entries back to $page_date; writing HTML..."
 
-    pug --pretty --obj "$output_json" < "$pug_template" > "$output_html"
+    jq '.posts | map(.createdTime | gmtime | strftime("%Y-%m")) | unique' "$output_json" > "$months_temp"
+    jq -r '.[]' "$months_temp" | while read -r month; do
+        jq --arg month "$month" '.posts = (.posts | map(select(.createdTime | gmtime | strftime("%Y-%m") == $month)))' "$output_json" |
+            write_pug "$output_base-$month.html"
+    done
+    jq --slurpfile months "$months_temp" --arg htmlBase "$output_base" 'del(.posts) | .months = $months[0] | .htmlBase = $htmlBase' "$output_json" |
+        write_pug "$output_base-index.html"
 done
 
 if test "$orig_pagination" = 'false'; then

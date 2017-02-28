@@ -1,0 +1,43 @@
+.post
+  h2
+    a(name=post.id, href="#"+post.id)
+      = new Date(post.createdTime * 1000).toLocaleString()
+  each part in post.message
+    p.part
+      if part.type == 'text'
+        each line in part.text.split(/\n/)
+          = line
+          br
+      else if part.type == 'link'
+        img.image(src=part.imageURL)
+        br
+        a(href=part.url)= part.title
+      else if part.type == "image" || part.type == "gif"
+        img.image(src=imgBase+"/"+post.id+"/"+part.src.split('/').pop())
+      else if part.type == 'video'
+        video(controls, loop, preload="none",
+          poster=imgBase+"/"+post.id+"/"+part.posterSrc.split('/').pop(),
+          src=imgBase+"/"+post.id+"/"+part.src.split('/').pop())
+      else if part.type == 'location'
+        img.icon(src=part.iconSrc)
+        | &nbsp;
+        a(href="http://foursquare.com/v/"+part.foursquareId)= part.name
+        br
+        a(href="http://maps.google.com/maps?q="+part.lat+","+part.long)
+          each line in part.formattedAddress
+            = line
+            br
+      else if part.type == 'music'
+        if part.spotifyData
+          a(href="http://open.spotify.com/track/"+part.spotifyData.track.id)= part.title
+        else if part.itunesData
+          a(href="http://itunes.apple.com/us/album/peach/id"+part.itunesData.album.id)= part.title
+        else
+          = part.title
+      else
+        | [OOPS, DUNNO HOW TO DISPLAY A #{part.type}, PLEASE FIX ME]
+  p.meta
+    =post.likeCount
+    | &nbsp;💖&nbsp;
+    =post.commentCount
+    | &nbsp;🗒
