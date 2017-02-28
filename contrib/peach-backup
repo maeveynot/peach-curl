@@ -78,7 +78,7 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
 
     jq '.posts | map(.createdTime | gmtime | strftime("%Y-%m")) | unique' "$output_json" > "$months_temp"
     jq -r '.[]' "$months_temp" | while read -r month; do
-        jq --arg month "$month" '.posts = (.posts | map(select(.createdTime | gmtime | strftime("%Y-%m") == $month)))' "$output_json" |
+        jq --arg month "$month" '.posts |= map(select(.createdTime | gmtime | strftime("%Y-%m") == $month))' "$output_json" |
             write_pug "$output_base-$month.html"
     done
     jq --slurpfile months "$months_temp" --arg htmlBase "$output_base" 'del(.posts) | .months = $months[0] | .htmlBase = $htmlBase' "$output_json" |
