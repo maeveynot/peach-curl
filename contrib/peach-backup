@@ -64,9 +64,9 @@ until test "$cursor" = '0' -o "$cursor" = 'null'; do
         jq --arg backupImageDir "$img_base_dir" '.data | .backupImageDir = $backupImageDir' "$page_temp" > "$output_json"
     fi
 
-    # TODO: handle GNU date on Linux
-    page_date="$(date -j -f '%s' $(jq -r '.data.posts[0].createdTime' "$page_temp"))"
+    page_date="$(jq -r '.posts[0].createdTime | gtmime | strftime("%F %T")' "$output_json")"
     echo "Loaded entries back to $page_date; writing HTML to $output_html"
+
     pug --pretty --obj "$output_json" < "$pug_template" > "$output_html"
 done
 
