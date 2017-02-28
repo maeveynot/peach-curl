@@ -30,7 +30,8 @@ fi
 
 page_temp="$(mktemp -t peach-page-tmp.XXXXXX)"
 full_temp="$(mktemp -t peach-full-tmp.XXXXXX)"
-trap 'rm -f -- "$page_temp" "$full_temp"; exit' INT TERM HUP EXIT
+cleanup() { rm -f -- "$page_temp" "$full_temp"; }
+trap 'exit $?' HUP INT QUIT TERM; trap cleanup exit
 
 my_id="$(jq -r '.data.streams[0].id' "$HOME/.peach-session")"
 until test "$cursor" = '0' -o "$cursor" = 'null'; do
