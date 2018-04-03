@@ -143,4 +143,5 @@ Currently I am using it to run `@gifs_galore`.
   Saying "current directory if exists else home directory" is not good
   because then it becomes ambiguous where to create the file when logging
   in. Environment variables are kind of tacky.
+- If curl returns a failure exit status (e.g. timeout), exit with that.
 - Tests, somehow?
