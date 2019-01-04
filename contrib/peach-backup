@@ -6,7 +6,7 @@ output_json="$output_base-data.json"
 img_base_dir="$output_base-images"
 
 # The HTML template (in this directory)
-pug_template="$(dirname "$0")/peach-backup-page.pug"
+pug_template="$(readlink -f "$0")/peach-backup-page.pug"
 
 if test -e "$output_json"; then
     echo "Moving old $output_json to $output_json.old"
