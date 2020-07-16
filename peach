@@ -3,6 +3,10 @@
 api_base="https://v1.peachapi.com"
 session_file="$HOME/.peach-session"
 
+temp="$(mktemp -t "peach.XXXXXX")"
+cleanup() { rm -rf "$temp"; }
+trap 'exit $?' HUP INT QUIT TERM; trap cleanup EXIT
+
 print_api_help() {
     cat <<EOF
 Known Peach endpoints (see README.md for details of how to interpret this list):
@@ -153,7 +157,12 @@ fi
 
 if test "$#" -gt 0; then
     resource="${1#/}"; shift
-    curl_peach "$resource" "$@" | if test -t 1; then jq .; else cat; fi
+    curl_peach "$resource" -o "$temp" "$@" || exit $?
+    if test -t 1; then
+        jq . "$temp"
+    else
+        cat "$temp"
+    fi
 else
     print_api_help
 fi
