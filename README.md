@@ -112,9 +112,9 @@ If `peach`'s stdout is a terminal, output will be filtered through `jq
 .`. Otherwise, responses will be output without any filtering. So:
 
     peach /connections                      # will be pretty-printed and colorized
-    peach /connections > c.json             # will be compact
+    peach /connections > conn.json          # will be compact
     peach /connections | less               # will also be compact
-    peach /connections | jq . > c.json      # will be pretty-printed, but not colorized
+    peach /connections | jq . > conn.json   # will be pretty-printed, but not colorized
     peach /connections | jq -C . | less -R  # will again be pretty-printed and colorized
 
 In the last example, the `-C` option to `jq` is necessary because its
