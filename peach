@@ -70,7 +70,7 @@ PUT     /activity/read                  (no body)
 POST    /activity/wave                  {targetStreamId: string, type: string}
 GET     /chat
 GET     /chat/token
-POST    /chat/id/{{id}}                 {clientPostID: string, message: [{type: "text", text: string, $messageID: string, $isTail: string, $isFinalTail: string}]}
+POST    /chat/id/{{id}}                 {clientPostID: string, message: [{type: "text", text: string, messageID: string, isTail: string, isFinalTail: string}]}
                                           or {type: "image", subtype: "sticker", src: string, width: number, height: number}, etc...
 PUT     /chat/id/{{id}}/read            (no body)
 
