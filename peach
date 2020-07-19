@@ -119,11 +119,12 @@ curl_peach() {
 }
 
 authenticated=yes
-while getopts 'f:hn' opt; do
+while getopts 'f:hnq' opt; do
     case "$opt" in
         f) session_file="$OPTARG";;
         h) print_api_help; exit;;
         n) unset authenticated;;
+        q) quiet=y;;
         *) echo 'Use `peach` or `peach -h` for help and usage'; exit 2;;
     esac
 done; shift $(($OPTIND-1))
@@ -164,5 +165,5 @@ if test "$#" -gt 0; then
         cat "$temp"
     fi
 else
-    print_api_help
+    test -n "$quiet" || print_api_help
 fi
