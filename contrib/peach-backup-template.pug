@@ -1,0 +1,80 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title= info.displayName
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+    style
+      | .avatar { width: 150px; float: left; margin-right: 1em; }
+      | .jumbotron .name { font-size: xx-large; font-weight: bold; }
+      | .jumbotron .bio { font-size: x-small; margin-top: 2em; }
+      | .icon { color: white; background: gray; }
+      | .post { margin: 5em 0; }
+      | .post img.image, .post video { width: 100%; object-fit: contain; }
+      | .meta { color: silver; }
+      | .meta span { padding-right: 1em; }
+      | .meta .date { font-size: smaller; }
+  body
+    .jumbotron
+      .container
+        h1.name
+          img.avatar(src=info.avatarSrc)
+          = info.displayName
+        p.user @#{info.name}
+        p.bio= info.bio
+        p 🍑
+    .container
+     .col-md-6.col-md-offset-3
+        if months
+          each v, k in months
+            h2
+              a(href=k + ".html")= v
+        else
+          each post in posts
+            .post
+              each part in post.message
+                p.part
+                  if part.type == 'text'
+                    each line in part.text.split(/\n/)
+                      = line
+                      br
+                  else if part.type == 'link'
+                    img.image(src=part.imageURL)
+                    br
+                    a(href=part.url)= part.title
+                  else if part.type == "image" || part.type == "gif"
+                    img.image(src="images/"+post.id+"/"+part.src.split('/').pop())
+                  else if part.type == 'video'
+                    video(controls, loop, preload="none",
+                      poster="images/"+post.id+"/"+part.posterSrc.split('/').pop(),
+                      src="images/"+post.id+"/"+part.src.split('/').pop())
+                  else if part.type == 'location'
+                    img.icon(src=part.iconSrc)
+                    | &nbsp;
+                    a(href="http://foursquare.com/v/"+part.foursquareId)= part.name
+                    br
+                    a(href="http://maps.google.com/maps?q="+part.lat+","+part.long)
+                      each line in part.formattedAddress
+                        = line
+                        br
+                  else if part.type == 'music'
+                    if part.spotifyData
+                      a(href="http://open.spotify.com/track/"+part.spotifyData.track.id)= part.title
+                    else if part.itunesData
+                      a(href="http://itunes.apple.com/us/album/peach/id"+part.itunesData.album.id)= part.title
+                    else
+                      = part.title
+                  else
+                    | PEACH-BACKUP BUG: UNHANDLED PART TYPE #{part.type}
+              p.meta
+                span.likes
+                  | ♡ 
+                  = post.likeCount
+                span.comments
+                  | 🗨 
+                  = post.commentCount
+                span.sep —
+                span.date= new Date(post.createdTime * 1000).toLocaleString()
+                a.permalink(name=post.id, href="#"+post.id)
+                  | 🔗

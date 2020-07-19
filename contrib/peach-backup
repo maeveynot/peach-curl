@@ -1,105 +1,142 @@
-#!/bin/sh
+#!/bin/sh -e
 
-# What we output to the current directory
-output_base='peach-backup'
-output_json="$output_base-data.json"
-img_base_dir="$output_base-images"
+# Ensure that we're logged in
 
-# The HTML template (in this directory)
-pug_template="$(readlink -f "$0")/peach-backup-page.pug"
+peach -q
 
-if test -e "$output_json"; then
-    echo "Moving old $output_json to $output_json.old"
-    mv "$output_json" "$output_json.old"
-fi
+# Get our ID
 
-# Fetch something to log in if necessary
-if ! peach /activity/isUnread -o /dev/null; then
-    echo "Can't connect to Peach"
+id="$(jq -r '.data.streams[0].id' ~/.peach-session)"
+
+# Make sure Peach is up
+
+if ! peach /activity/isUnread >/dev/null; then
+    echo "couldn't connect to Peach! exiting."
     exit 1
 fi
 
-# Save the current value of pagination so we can turn it back off if desired.
+# Save the current pagination setting
+
 orig_pagination="$(peach /stream/allow-pagination | jq '.data.allowPagination')"
 
-if test "$orig_pagination" = 'false'; then
-    echo "Turning on pagination..."
-    peach /stream/allow-pagination -d '{"allowPagination": true}' | jq -c
-    sleep 8
+if test "$orig_pagination" = false; then
+    echo "turning on pagination so we can download old posts..."
+    peach /stream/allow-pagination -d '{"allowPagination": true}' >/dev/null
 fi
 
-page_temp="$(mktemp -t peach-page.XXXXXX)"
-full_temp="$(mktemp -t peach-full.XXXXXX)"
-months_temp="$(mktemp -t peach-months.XXXXXX)"
-pug_temp="$(mktemp -t peach-pug.XXXXXX)"
-cleanup() { rm -f -- "$page_temp" "$full_temp" "$months_temp" "$pug_temp"; }
+# Make a place to write stuff, and some temp files
+
+output_dir="peach-backup-$id"
+data_dir="$output_dir/data"
+image_dir="$output_dir/images"
+mkdir -p "$data_dir" "$image_dir"
+
+date="$(date +%Y-%m-%d-%H%M)"
+info="$data_dir/info-${date}.json"
+posts="$data_dir/posts-backup-${date}.jsonl"
+
+temp_dir="$(mktemp -d -t peach-backup.XXXXXX)"
+cleanup() { rm -rf "$temp_dir"; }
 trap 'exit $?' HUP INT QUIT TERM; trap cleanup exit
 
-write_pug() {
-    output="$1"; shift
-    cat > "$pug_temp"
-    pug --obj "$pug_temp" --pretty --path "$pug_template" <"$pug_template" >"$output"
-    echo "  - wrote $output"
-}
+# Fetch all posts
 
-my_id="$(jq -r '.data.streams[0].id' "$HOME/.peach-session")"
-until test "$cursor" = '0' -o "$cursor" = 'null'; do
-    echo "Fetching page from stream $my_id${cursor:+ with cursor $cursor}..."
-    peach "/stream/id/$my_id${cursor:+?cursor=$cursor}" > "$page_temp"
-    sleep 4
-    if test "$(jq -r '.success' "$page_temp")" = '0'; then
-        echo "Failed! Bailing."
-        break
-    fi
-    cursor="$(jq -r .data.cursor < "$page_temp")"
+echo "downloading text of posts..."
 
-    jq --argjson types '{"image": ["src"], "gif": ["src"], "video": ["src", "posterSrc"]}' \
-        -r '.data.posts[] | .id as $id | .message[] | . as $m | $types[.type] // empty | .[] | "\($id) \($m[.])"' "$page_temp" \
-    | while read post_id img_url; do
-        img_dir="$img_base_dir/$post_id"
-        mkdir -p "$img_dir"
-        img_file="$img_dir/$(basename "$img_url")"
-        if ! test -e "$img_file"; then
-            echo "Downloading image $img_file..."
-            curl -s -o "$img_file" "$img_url"
-            sleep 2
-        fi
-    done
+until test "$cursor" = 0 -o "$cursor" = null; do
+    stream="$temp_dir"/stream.json
+    peach "/stream/id/$id${cursor:+?cursor=$cursor}" >"$stream"
 
-    if test -s "$output_json"; then
-        cp "$output_json" "$full_temp"
-        jq --slurpfile newPage "$page_temp" '.posts = ($newPage[0].data.posts + .posts)' "$full_temp" > "$output_json"
+    if test "$(jq -r '.success' "$stream")" = 1; then
+        cursor="$(jq -r '.data.cursor' "$stream")"
+        stream_page="$temp_dir/page-${cursor:-0}.jsonl"
+        jq -c '.data.posts[]' "$stream" >"$stream_page"
+        jq '.data | del(.posts)' "$stream" >"$info"
     else
-        jq --arg imgBase "$img_base_dir" '.data | .imgBase = $imgBase' "$page_temp" > "$output_json"
+        echo "failed to download page! exiting."
+        exit 1
     fi
 
-    # NOTE about all time stuff: The jq manual claims that all builtins
-    # deal exclusively with UTC, which is mostly true, but if you pass
-    # %Z or %z to strftime you get your local tz. We could misuse this
-    # to calculate the local UTC offset, with something like:
-    #
-    # jq -n '0 | strftime("%z") | if .[:-4] == "-" then -1 else 1 end * (.[-4:-2]|tonumber)*3600 + (.[-2:]|tonumber)*60'
-    #
-    # and then pre-adjust all epoch values (.createdTime) to make the
-    # resulting hour come out right. This seems like worse of a hack
-    # than living with the month pages being cut off at UTC midnight
-    # instead of local midnight, so I'm not doing it.
-
-    page_date="$(jq -r '.posts[0].createdTime | gmtime | strftime("%F %T")' "$output_json")"
-    echo "Loaded entries back to $page_date (UTC); writing HTML..."
-
-    jq '.posts | map(.createdTime | gmtime | strftime("%Y-%m")) | unique' "$output_json" > "$months_temp"
-    jq -r '.[]' "$months_temp" | while read -r month; do
-        jq --arg month "$month" '.posts |= map(select(.createdTime | gmtime | strftime("%Y-%m") == $month))' "$output_json" |
-            write_pug "$output_base-$month.html"
-    done
-    jq --slurpfile months "$months_temp" --arg htmlBase "$output_base" 'del(.posts) | .months = $months[0] | .htmlBase = $htmlBase' "$output_json" |
-        write_pug "$output_base-index.html"
+    oldest_post="$(jq --raw-output --slurp 'first | .createdTime | gmtime | strftime("%F %T")' "$stream_page")"
+    echo "scrolled back to $oldest_post, downloading more..."
+    sleep 1
 done
 
-if test "$orig_pagination" = 'false'; then
-    echo "Turning pagination back off..."
-    peach /stream/allow-pagination -d '{"allowPagination": false}' | jq -c
+cat "$temp_dir"/page-*.jsonl >"$posts"
+
+# Extract a list of all the months that we have posts for
+
+jq --slurp \
+    'flatten | sort_by(.createdTime) |
+     map(.createdTime | gmtime | {key: strftime("%Y-%m"), value: strftime("%B %Y")}) |
+     unique | from_entries' \
+    "$data_dir"/posts-backup-*.jsonl >"$temp_dir/months.json"
+
+# Our template is in this script's directory
+
+template_dir="$(dirname "$(readlink -f "$0")")"
+template="$template_dir/peach-backup-template.pug"
+
+write_pug() {
+    out="$1"; shift
+    cat > "$temp_dir/pug-input.json"
+    pug --obj "$temp_dir/pug-input.json" --pretty --path "$template" <"$template" >"$out"
+    echo "wrote HTML file $(basename "$out")"
+}
+
+# Generate the index page
+
+jq --slurpfile info "$info" \
+    '{info: $info[0], months: .}' \
+    "$temp_dir/months.json" |
+    write_pug "$output_dir/index.html"
+
+# Write the page for each month
+#
+# Note: unfortunately, times are in UTC here because older versions of jq only
+# have gmtime, not localtime. This doesn't affect the per-post dates that get
+# rendered in the HTML but it does mean how we split them into months here is
+# wrong. I suppose we could parse `date +%z` or something but meh.
+
+jq --raw-output 'keys[]' "$temp_dir/months.json" |
+    while read -r month; do
+        jq --slurpfile info "$info" --arg month "$month" --slurp \
+            'flatten | map(select(.createdTime | gmtime | strftime("%Y-%m") == $month)) |
+             unique | sort_by(.createdTime) | {posts: ., info: $info[0]}' \
+            "$data_dir"/posts-backup-*.jsonl |
+            write_pug "$output_dir/$month.html"
+    done
+
+# Restore pagination setting if necessary
+
+if test "$orig_pagination" = false; then
+    echo "turning pagination back off..."
+    peach /stream/allow-pagination -d '{"allowPagination": false}' >/dev/null
 fi
 
-echo "Finished creating backup!"
+echo
+echo "backup HTML files written to $output_dir!"
+echo "open this in your web browser:"
+echo
+echo "    file://$(readlink -f "$output_dir")/index.html"
+echo
+echo "now downloading images (this may take a while)..."
+echo
+
+# Fetch all images referenced in the posts
+
+jq --raw-output \
+    --argjson types '{"image": ["src"], "gif": ["src"], "video": ["src", "posterSrc"]}' \
+    '.id as $id | .message[] | . as $m | $types[.type] // empty | .[] | "\($id) \($m[.])"' \
+    "$posts" |
+    while read post_id image_url; do
+        dir="$image_dir/$post_id"
+        file="$(basename "$image_url" | sed 's/\?.*//')"
+        out="$dir/$file"
+        mkdir -p "$dir"
+        if ! test -e "$out"; then
+            echo "downloading image $(echo "$file" | sed 's/\?.*//')..."
+            curl -s -o "$out" "$image_url" || echo "couldn't download <$image_url>! skipping."
+            sleep 1
+        fi
+    done
