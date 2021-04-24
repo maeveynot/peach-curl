@@ -26,7 +26,7 @@ fi
 
 # Make a place to write stuff, and some temp files
 
-output_dir="peach-backup-$id"
+output_dir="peach-$id"
 data_dir="$output_dir/data"
 image_dir="$output_dir/images"
 mkdir -p "$data_dir" "$image_dir"
@@ -70,7 +70,7 @@ jq --slurp \
     'flatten | sort_by(.createdTime) |
      map(.createdTime | gmtime | {key: strftime("%Y-%m"), value: strftime("%B %Y")}) |
      unique | from_entries' \
-    "$data_dir"/posts-backup-*.jsonl >"$temp_dir/months.json"
+    "$data_dir"/posts-*.jsonl >"$temp_dir/months.json"
 
 # Our template is in this script's directory
 
@@ -103,7 +103,7 @@ jq --raw-output 'keys[]' "$temp_dir/months.json" |
         jq --slurpfile info "$info" --arg month "$month" --slurp \
             'flatten | map(select(.createdTime | gmtime | strftime("%Y-%m") == $month)) |
              unique | sort_by(.createdTime) | {posts: ., info: $info[0]}' \
-            "$data_dir"/posts-backup-*.jsonl |
+            "$data_dir"/posts-*.jsonl |
             write_pug "$output_dir/$month.html"
     done
 
